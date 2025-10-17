@@ -12,6 +12,7 @@ body {
   background-color: white;
   width: 256px;
   height: 256px;
+  cursor: crosshair;
 }
 #Mainheader {
   padding: 4px;
