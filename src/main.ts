@@ -41,6 +41,7 @@ const lines: Point[][] = [];
 const redoLines: Point[][] = [];
 let currentLine: Point[];
 
+// Mouse interaction
 canvas.addEventListener("mousedown", (md) => {
   cursor.active = true;
   cursor.x = md.offsetX;
@@ -61,6 +62,36 @@ canvas.addEventListener("mouseup", () => {
 });
 
 canvas.addEventListener("mousemove", (mm) => {
+  if (cursor.active) {
+    cursor.x = mm.offsetX;
+    cursor.y = mm.offsetY;
+    currentLine.push({ x: cursor.x, y: cursor.y });
+
+    canvas.dispatchEvent(drawingChanged);
+  }
+});
+
+// Stylus Interaction
+canvas.addEventListener("pointerdown", (md) => {
+  cursor.active = true;
+  cursor.x = md.offsetX;
+  cursor.y = md.offsetY;
+
+  currentLine = [];
+  lines.push(currentLine);
+  currentLine.push({ x: cursor.x, y: cursor.y });
+
+  canvas.dispatchEvent(drawingChanged);
+});
+
+canvas.addEventListener("pointerup", () => {
+  cursor.active = false;
+  currentLine = [];
+
+  canvas.dispatchEvent(drawingChanged);
+});
+
+canvas.addEventListener("pointermove", (mm) => {
   if (cursor.active) {
     cursor.x = mm.offsetX;
     cursor.y = mm.offsetY;
