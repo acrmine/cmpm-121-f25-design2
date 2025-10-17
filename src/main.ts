@@ -13,15 +13,18 @@ canvas.width = 256;
 canvas.height = 256;
 document.body.appendChild(canvas);
 
+const undoRedoCont = document.createElement("div");
+document.body.append(undoRedoCont);
+
 const undoButton = document.createElement("button");
 undoButton.id = "undoBtn";
 undoButton.innerHTML = "undo";
-document.body.append(undoButton);
+undoRedoCont.append(undoButton);
 
 const redoButton = document.createElement("button");
 redoButton.id = "redoBtn";
 redoButton.innerHTML = "redo";
-document.body.append(redoButton);
+undoRedoCont.append(redoButton);
 
 const clearButton = document.createElement("button");
 clearButton.id = "clrBtn";

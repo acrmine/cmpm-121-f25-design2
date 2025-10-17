@@ -21,3 +21,18 @@ body {
   font-size: 26px;
   color: black;
 }
+#undoBtn {
+  background-color: green;
+  width: 120px;
+  margin: 4px;
+}
+#redoBtn {
+  background-color: magenta;
+  width: 120px;
+  margin: 4px;
+}
+#clrBtn {
+  background-color: red;
+  height: 40px;
+  margin-top: 16px;
+}
