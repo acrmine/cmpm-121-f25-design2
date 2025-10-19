@@ -2,6 +2,44 @@ import "./style.css";
 
 type Point = { x: number; y: number };
 
+class Line {
+  points: Point[] = [];
+
+  constructor(startPoint: Point) {
+    this.points.push(startPoint);
+  }
+
+  drag(nextPoint: Point) {
+    this.points.push(nextPoint);
+  }
+
+  clear() {
+    this.points.splice(0, this.points.length);
+  }
+
+  // works like [] but checks bounds
+  getPoint(index: number): Point {
+    let outPoint: Point = { x: -1, y: -1 };
+    if (index >= this.points.length || index < 0) {
+      return outPoint;
+    }
+    outPoint = this.points[index];
+    return outPoint;
+  }
+
+  display(ctxElem: CanvasRenderingContext2D) {
+    if (this.points.length > 1) {
+      ctxElem.beginPath();
+      const { x, y } = this.points[0];
+      ctxElem.moveTo(x, y);
+      for (const { x, y } of this.points) {
+        ctxElem.lineTo(x, y);
+      }
+      ctxElem.stroke();
+    }
+  }
+}
+
 const title: HTMLHeadElement = document.createElement("h1");
 title.id = "Mainheader";
 title.textContent = "Draw a Little Bit";
@@ -13,7 +51,7 @@ canvas.width = 256;
 canvas.height = 256;
 document.body.appendChild(canvas);
 
-const undoRedoCont = document.createElement("div");
+const undoRedoCont = document.createElement("div") as HTMLDivElement;
 document.body.append(undoRedoCont);
 
 const undoButton = document.createElement("button");
@@ -37,56 +75,25 @@ const drawingChanged = new Event("drawing-changed");
 
 const cursor = { active: false, x: 0, y: 0 };
 
-const lines: Point[][] = [];
-const redoLines: Point[][] = [];
-let currentLine: Point[];
+const lines: Line[] = [];
+const redoLines: Line[] = [];
+let currentLine: Line | null = null;
 
-// Mouse interaction
-canvas.addEventListener("mousedown", (md) => {
-  cursor.active = true;
-  cursor.x = md.offsetX;
-  cursor.y = md.offsetY;
-
-  currentLine = [];
-  lines.push(currentLine);
-  currentLine.push({ x: cursor.x, y: cursor.y });
-
-  canvas.dispatchEvent(drawingChanged);
-});
-
-canvas.addEventListener("mouseup", () => {
-  cursor.active = false;
-  currentLine = [];
-
-  canvas.dispatchEvent(drawingChanged);
-});
-
-canvas.addEventListener("mousemove", (mm) => {
-  if (cursor.active) {
-    cursor.x = mm.offsetX;
-    cursor.y = mm.offsetY;
-    currentLine.push({ x: cursor.x, y: cursor.y });
-
-    canvas.dispatchEvent(drawingChanged);
-  }
-});
-
-// Stylus Interaction
+// unifying interaction event for mouse, pen, and touch
 canvas.addEventListener("pointerdown", (md) => {
   cursor.active = true;
   cursor.x = md.offsetX;
   cursor.y = md.offsetY;
 
-  currentLine = [];
+  currentLine = new Line({ x: cursor.x, y: cursor.y });
   lines.push(currentLine);
-  currentLine.push({ x: cursor.x, y: cursor.y });
 
   canvas.dispatchEvent(drawingChanged);
 });
 
 canvas.addEventListener("pointerup", () => {
   cursor.active = false;
-  currentLine = [];
+  currentLine = null;
 
   canvas.dispatchEvent(drawingChanged);
 });
@@ -95,7 +102,9 @@ canvas.addEventListener("pointermove", (mm) => {
   if (cursor.active) {
     cursor.x = mm.offsetX;
     cursor.y = mm.offsetY;
-    currentLine.push({ x: cursor.x, y: cursor.y });
+    if (currentLine != null) {
+      currentLine.drag({ x: cursor.x, y: cursor.y });
+    }
 
     canvas.dispatchEvent(drawingChanged);
   }
@@ -104,14 +113,8 @@ canvas.addEventListener("pointermove", (mm) => {
 canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   for (const line of lines) {
-    if (line.length > 1) {
-      ctx.beginPath();
-      const { x, y } = line[0];
-      ctx.moveTo(x, y);
-      for (const { x, y } of line) {
-        ctx.lineTo(x, y);
-      }
-      ctx.stroke();
+    if (line != null) {
+      line.display(ctx);
     }
   }
 });
