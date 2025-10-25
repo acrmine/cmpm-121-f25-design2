@@ -2,11 +2,16 @@ import "./style.css";
 
 type Point = { x: number; y: number };
 
+const thinLineWidth: number = 3;
+const thickLineWidth: number = 6;
+
 class Line {
   points: Point[] = [];
+  lineWidth: number;
 
-  constructor(startPoint: Point) {
+  constructor(startPoint: Point, lineWidth: number) {
     this.points.push(startPoint);
+    this.lineWidth = lineWidth;
   }
 
   drag(nextPoint: Point) {
@@ -28,6 +33,8 @@ class Line {
   }
 
   display(ctxElem: CanvasRenderingContext2D) {
+    const prevLineWidth: number = ctx.lineWidth;
+    ctx.lineWidth = this.lineWidth;
     if (this.points.length > 1) {
       ctxElem.beginPath();
       const { x, y } = this.points[0];
@@ -37,6 +44,7 @@ class Line {
       }
       ctxElem.stroke();
     }
+    ctx.lineWidth = prevLineWidth;
   }
 }
 
@@ -45,11 +53,30 @@ title.id = "Mainheader";
 title.textContent = "Draw a Little Bit";
 document.body.appendChild(title);
 
+const canvasCont = document.createElement("div") as HTMLDivElement;
+document.body.append(canvasCont);
+
 const canvas = document.createElement("canvas") as HTMLCanvasElement;
 canvas.id = "sketchpad";
 canvas.width = 256;
 canvas.height = 256;
-document.body.appendChild(canvas);
+canvasCont.append(canvas);
+
+const thinMarker = document.createElement("button") as HTMLButtonElement;
+thinMarker.id = "thnMrkr";
+canvasCont.append(thinMarker);
+const thinMarkerIcon = document.createElement("div") as HTMLDivElement;
+thinMarkerIcon.id = "thnMrkrCircle";
+thinMarker.appendChild(thinMarkerIcon);
+
+const thickMarker = document.createElement("button") as HTMLButtonElement;
+thickMarker.id = "thkMrkr";
+canvasCont.append(thickMarker);
+const thickMarkerIcon = document.createElement("div") as HTMLDivElement;
+thickMarkerIcon.id = "thkMrkrCircle";
+thickMarker.appendChild(thickMarkerIcon);
+
+const tool_bar: HTMLButtonElement[] = [thinMarker, thickMarker];
 
 const undoRedoCont = document.createElement("div") as HTMLDivElement;
 document.body.append(undoRedoCont);
@@ -70,6 +97,7 @@ clearButton.innerHTML = "clear";
 document.body.appendChild(clearButton);
 
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+ctx.lineWidth = thinLineWidth;
 
 const drawingChanged = new Event("drawing-changed");
 
@@ -85,7 +113,7 @@ canvas.addEventListener("pointerdown", (md) => {
   cursor.x = md.offsetX;
   cursor.y = md.offsetY;
 
-  currentLine = new Line({ x: cursor.x, y: cursor.y });
+  currentLine = new Line({ x: cursor.x, y: cursor.y }, ctx.lineWidth);
   lines.push(currentLine);
 
   canvas.dispatchEvent(drawingChanged);
@@ -117,6 +145,22 @@ canvas.addEventListener("drawing-changed", () => {
       line.display(ctx);
     }
   }
+});
+
+thinMarker.addEventListener("click", () => {
+  for (const button of tool_bar) {
+    button.classList.remove("selectedTool");
+  }
+  thinMarker.classList.add("selectedTool");
+  ctx.lineWidth = thinLineWidth;
+});
+
+thickMarker.addEventListener("click", () => {
+  for (const button of tool_bar) {
+    button.classList.remove("selectedTool");
+  }
+  thickMarker.classList.add("selectedTool");
+  ctx.lineWidth = thickLineWidth;
 });
 
 undoButton.addEventListener("click", () => {

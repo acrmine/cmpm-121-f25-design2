@@ -21,6 +21,42 @@ body {
   font-size: 26px;
   color: black;
 }
+#thnMrkr {
+  position: absolute;
+  padding: 5px;
+  translate: -288px;
+  background: rgba(255, 255, 255, 0);
+  border: none;
+  cursor: pointer;
+}
+#thnMrkrCircle {
+  width: 10px;
+  height: 10px;
+  background-color: black;
+  border-radius: 50%;
+}
+#thkMrkr {
+  position: absolute;
+  padding: 0;
+  transform: translate(-288px, 25px);
+  background: rgba(255, 255, 255, 0);
+  border: none;
+  cursor: pointer;
+}
+#thkMrkrCircle {
+  width: 20px;
+  height: 20px;
+  background-color: black;
+  border-radius: 50%;
+}
+#thnMrkr:hover, #thkMrkr:hover {
+  background-color: white;
+  opacity: 0.5;
+}
+.selectedTool {
+  background-color: white;
+  opacity: 0.2;
+}
 #undoBtn {
   background-color: green;
   width: 120px;
