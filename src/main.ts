@@ -1,9 +1,9 @@
 import "./style.css";
 
-type Point = { x: number; y: number };
-
 const thinLineWidth: number = 3;
 const thickLineWidth: number = 6;
+
+type Point = { x: number; y: number };
 
 class Line {
   points: Point[] = [];
@@ -48,6 +48,39 @@ class Line {
   }
 }
 
+class CursorObj {
+  onCanvas: boolean = false;
+  cursorUp: boolean = true;
+  active: boolean = false;
+  currTool: string = "thin";
+  x: number;
+  y: number;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  setPos(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  display(ctxElem: CanvasRenderingContext2D) {
+    if (this.onCanvas && this.cursorUp) {
+      ctxElem.beginPath();
+      if (this.currTool == "thin") {
+        ctxElem.arc(this.x, this.y, 0.8, 0, 2 * Math.PI);
+        ctxElem.fill();
+      } else {
+        ctxElem.arc(this.x, this.y, 1.3, 0, 2 * Math.PI);
+        ctxElem.fill();
+      }
+      ctxElem.stroke();
+    }
+  }
+}
+
 const title: HTMLHeadElement = document.createElement("h1");
 title.id = "Mainheader";
 title.textContent = "Draw a Little Bit";
@@ -67,6 +100,7 @@ thinMarker.id = "thnMrkr";
 canvasCont.append(thinMarker);
 const thinMarkerIcon = document.createElement("div") as HTMLDivElement;
 thinMarkerIcon.id = "thnMrkrCircle";
+thinMarkerIcon.classList.add("thnMrkrCircle");
 thinMarker.appendChild(thinMarkerIcon);
 
 const thickMarker = document.createElement("button") as HTMLButtonElement;
@@ -74,9 +108,15 @@ thickMarker.id = "thkMrkr";
 canvasCont.append(thickMarker);
 const thickMarkerIcon = document.createElement("div") as HTMLDivElement;
 thickMarkerIcon.id = "thkMrkrCircle";
+thickMarkerIcon.classList.add("thkMrkrCircle");
 thickMarker.appendChild(thickMarkerIcon);
 
 const tool_bar: HTMLButtonElement[] = [thinMarker, thickMarker];
+
+const clearButton = document.createElement("button");
+clearButton.id = "clrBtn";
+clearButton.innerHTML = "clear";
+canvasCont.appendChild(clearButton);
 
 const undoRedoCont = document.createElement("div") as HTMLDivElement;
 document.body.append(undoRedoCont);
@@ -91,27 +131,39 @@ redoButton.id = "redoBtn";
 redoButton.innerHTML = "redo";
 undoRedoCont.append(redoButton);
 
-const clearButton = document.createElement("button");
-clearButton.id = "clrBtn";
-clearButton.innerHTML = "clear";
-document.body.appendChild(clearButton);
-
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 ctx.lineWidth = thinLineWidth;
+ctx.fillStyle = "black";
 
 const drawingChanged = new Event("drawing-changed");
+const mouseOnCanvas = new Event("mouse-on-canvas");
 
-const cursor = { active: false, x: 0, y: 0 };
+const cursor: CursorObj | null = new CursorObj(0, 0);
 
 const lines: Line[] = [];
 const redoLines: Line[] = [];
 let currentLine: Line | null = null;
 
-// unifying interaction event for mouse, pen, and touch
-canvas.addEventListener("pointerdown", (md) => {
+// pointer is a unifying interaction event for mouse, pen, and touch
+// Pointer Entering / Leaving Canvas
+canvas.addEventListener("pointerenter", (pe) => {
+  cursor.onCanvas = true;
+  cursor.x = pe.offsetX;
+  cursor.y = pe.offsetY;
+  canvas.dispatchEvent(mouseOnCanvas);
+});
+
+canvas.addEventListener("pointerleave", () => {
+  cursor.onCanvas = false;
+  canvas.dispatchEvent(drawingChanged);
+});
+
+// Pointer draggd across canvas
+canvas.addEventListener("pointerdown", (pd) => {
   cursor.active = true;
-  cursor.x = md.offsetX;
-  cursor.y = md.offsetY;
+  cursor.cursorUp = false;
+  cursor.x = pd.offsetX;
+  cursor.y = pd.offsetY;
 
   currentLine = new Line({ x: cursor.x, y: cursor.y }, ctx.lineWidth);
   lines.push(currentLine);
@@ -121,25 +173,33 @@ canvas.addEventListener("pointerdown", (md) => {
 
 canvas.addEventListener("pointerup", () => {
   cursor.active = false;
+  cursor.cursorUp = true;
   currentLine = null;
 
   canvas.dispatchEvent(drawingChanged);
 });
 
-canvas.addEventListener("pointermove", (mm) => {
+canvas.addEventListener("pointermove", (pm) => {
+  cursor.x = pm.offsetX;
+  cursor.y = pm.offsetY;
   if (cursor.active) {
-    cursor.x = mm.offsetX;
-    cursor.y = mm.offsetY;
     if (currentLine != null) {
       currentLine.drag({ x: cursor.x, y: cursor.y });
     }
-
     canvas.dispatchEvent(drawingChanged);
   }
+  if (cursor.onCanvas) {
+    canvas.dispatchEvent(mouseOnCanvas);
+  }
+});
+
+canvas.addEventListener("mouse-on-canvas", () => {
+  canvas.dispatchEvent(drawingChanged);
 });
 
 canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  cursor.display(ctx);
   for (const line of lines) {
     if (line != null) {
       line.display(ctx);
@@ -153,6 +213,7 @@ thinMarker.addEventListener("click", () => {
   }
   thinMarker.classList.add("selectedTool");
   ctx.lineWidth = thinLineWidth;
+  cursor.currTool = "thin";
 });
 
 thickMarker.addEventListener("click", () => {
@@ -161,6 +222,7 @@ thickMarker.addEventListener("click", () => {
   }
   thickMarker.classList.add("selectedTool");
   ctx.lineWidth = thickLineWidth;
+  cursor.currTool = "thick";
 });
 
 undoButton.addEventListener("click", () => {

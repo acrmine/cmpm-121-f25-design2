@@ -12,7 +12,7 @@ body {
   background-color: white;
   width: 256px;
   height: 256px;
-  cursor: crosshair;
+  cursor: none;
 }
 #Mainheader {
   padding: 4px;
@@ -23,29 +23,29 @@ body {
 }
 #thnMrkr {
   position: absolute;
-  padding: 5px;
+  padding: 7px;
   translate: -288px;
   background: rgba(255, 255, 255, 0);
   border: none;
   cursor: pointer;
 }
-#thnMrkrCircle {
-  width: 10px;
-  height: 10px;
+.thnMrkrCircle {
+  width: 6px;
+  height: 6px;
   background-color: black;
   border-radius: 50%;
 }
 #thkMrkr {
   position: absolute;
-  padding: 0;
+  padding: 4px;
   transform: translate(-288px, 25px);
   background: rgba(255, 255, 255, 0);
   border: none;
   cursor: pointer;
 }
-#thkMrkrCircle {
-  width: 20px;
-  height: 20px;
+.thkMrkrCircle {
+  width: 12px;
+  height: 12px;
   background-color: black;
   border-radius: 50%;
 }
@@ -70,5 +70,6 @@ body {
 #clrBtn {
   background-color: red;
   height: 40px;
-  margin-top: 16px;
+  margin: 4px;
+  position: absolute;
 }
