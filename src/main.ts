@@ -1,21 +1,66 @@
 import "./style.css";
 
-const thinLineWidth: number = 3;
-const thickLineWidth: number = 6;
-
 type Point = { x: number; y: number };
 
-class Line {
-  points: Point[] = [];
-  lineWidth: number;
+interface ToolButton {
+  name: string;
+  type: string;
+  sticker?: string;
+  lineWeight?: number;
+}
 
-  constructor(startPoint: Point, lineWidth: number) {
-    this.points.push(startPoint);
+const propogateToolBar = (toolBar: HTMLDivElement, toolButtons: ToolButton[]): HTMLButtonElement[] => {
+  const outputButtons: HTMLButtonElement[] = [];
+  for (const buttonDetails of toolButtons) {
+    const newbutton = document.createElement("button") as HTMLButtonElement;
+    newbutton.classList.add("toolButton");
+    newbutton.title = buttonDetails.name;
+    newbutton.dataset.newLineWeight = "NA";
+    toolBar.append(newbutton);
+    outputButtons.push(newbutton);
+
+    if (buttonDetails.type == "marker") {
+      const markerIcon = document.createElement("div") as HTMLDivElement;
+      markerIcon.classList.add("mrkrCircle");
+      if (buttonDetails.lineWeight != undefined) {
+        markerIcon.style.width = (buttonDetails.lineWeight * 2).toString() + "px";
+        markerIcon.style.height = (buttonDetails.lineWeight * 2).toString() + "px";
+        newbutton.dataset.newLineWeight = buttonDetails.lineWeight.toString();
+      } else {
+        console.log('Line weight undefined for button "' + buttonDetails.name + '"');
+      }
+      newbutton.appendChild(markerIcon);
+    } else if (buttonDetails.type == "sticker") {
+      if (buttonDetails.sticker != undefined) {
+        newbutton.textContent = buttonDetails.sticker;
+      } else {
+        console.log('Sticker undefined for button "' + buttonDetails.name + '"');
+      }
+    } else {
+      console.log('No type defined for button "' + buttonDetails.name + '"');
+    }
+  }
+  return outputButtons;
+};
+
+class Drawing {
+  points: Point[] = [];
+  lineWidth: number | null;
+  sticker: string | null;
+
+  constructor(startPoint: Point, lineWidth: number | null = null, sticker: string | null = null) {
     this.lineWidth = lineWidth;
+    this.sticker = sticker;
+    this.points = [];
+    this.points.push(startPoint);
   }
 
   drag(nextPoint: Point) {
-    this.points.push(nextPoint);
+    if (this.lineWidth !== null) {
+      this.points.push(nextPoint);
+    } else {
+      this.points[0] = nextPoint;
+    }
   }
 
   clear() {
@@ -33,18 +78,24 @@ class Line {
   }
 
   display(ctxElem: CanvasRenderingContext2D) {
-    const prevLineWidth: number = ctx.lineWidth;
-    ctx.lineWidth = this.lineWidth;
-    if (this.points.length > 1) {
-      ctxElem.beginPath();
-      const { x, y } = this.points[0];
-      ctxElem.moveTo(x, y);
-      for (const { x, y } of this.points) {
-        ctxElem.lineTo(x, y);
+    if (this.lineWidth !== null) {
+      const prevLineWidth: number = ctx.lineWidth;
+      ctx.lineWidth = this.lineWidth;
+      if (this.points.length > 1) {
+        ctxElem.beginPath();
+        const { x, y } = this.points[0];
+        ctxElem.moveTo(x, y);
+        for (const { x, y } of this.points) {
+          ctxElem.lineTo(x, y);
+        }
+        ctxElem.stroke();
       }
+      ctx.lineWidth = prevLineWidth;
+    } else if (this.sticker !== null) {
+      ctxElem.beginPath();
+      ctxElem.fillText(this.sticker, this.points[0].x, this.points[0].y);
       ctxElem.stroke();
     }
-    ctx.lineWidth = prevLineWidth;
   }
 }
 
@@ -52,7 +103,8 @@ class CursorObj {
   onCanvas: boolean = false;
   cursorUp: boolean = true;
   active: boolean = false;
-  currTool: string = "thin";
+  currTool: string = "3";
+  currSticker: string = "💀";
   x: number;
   y: number;
 
@@ -69,12 +121,11 @@ class CursorObj {
   display(ctxElem: CanvasRenderingContext2D) {
     if (this.onCanvas && this.cursorUp) {
       ctxElem.beginPath();
-      if (this.currTool == "thin") {
-        ctxElem.arc(this.x, this.y, 0.8, 0, 2 * Math.PI);
+      if (!isNaN(Number(this.currTool))) {
+        ctxElem.arc(this.x, this.y, Number(this.currTool) / 3, 0, 2 * Math.PI);
         ctxElem.fill();
-      } else {
-        ctxElem.arc(this.x, this.y, 1.3, 0, 2 * Math.PI);
-        ctxElem.fill();
+      } else if (this.currTool == "sticker") {
+        ctxElem.fillText(this.currSticker, this.x, this.y);
       }
       ctxElem.stroke();
     }
@@ -95,23 +146,38 @@ canvas.width = 256;
 canvas.height = 256;
 canvasCont.append(canvas);
 
-const thinMarker = document.createElement("button") as HTMLButtonElement;
-thinMarker.id = "thnMrkr";
-canvasCont.append(thinMarker);
-const thinMarkerIcon = document.createElement("div") as HTMLDivElement;
-thinMarkerIcon.id = "thnMrkrCircle";
-thinMarkerIcon.classList.add("thnMrkrCircle");
-thinMarker.appendChild(thinMarkerIcon);
-
-const thickMarker = document.createElement("button") as HTMLButtonElement;
-thickMarker.id = "thkMrkr";
-canvasCont.append(thickMarker);
-const thickMarkerIcon = document.createElement("div") as HTMLDivElement;
-thickMarkerIcon.id = "thkMrkrCircle";
-thickMarkerIcon.classList.add("thkMrkrCircle");
-thickMarker.appendChild(thickMarkerIcon);
-
-const tool_bar: HTMLButtonElement[] = [thinMarker, thickMarker];
+const toolBar = document.createElement("div") as HTMLDivElement;
+toolBar.id = "toolBar";
+canvasCont.append(toolBar);
+const toolBarButtons: ToolButton[] = [
+  {
+    name: "Thin Marker",
+    type: "marker",
+    lineWeight: 3,
+  },
+  {
+    name: "Thick Marker",
+    type: "marker",
+    lineWeight: 6,
+  },
+  {
+    name: "Rocket Sticker",
+    type: "sticker",
+    sticker: "🚀",
+  },
+  {
+    name: "Space Invader Sticker",
+    type: "sticker",
+    sticker: "👾",
+  },
+  {
+    name: "Satelite Sticker",
+    type: "sticker",
+    sticker: "🛰️",
+  },
+];
+propogateToolBar(toolBar, toolBarButtons);
+const toolButtons: NodeListOf<HTMLButtonElement> = toolBar.querySelectorAll(".toolButton");
 
 const clearButton = document.createElement("button");
 clearButton.id = "clrBtn";
@@ -132,17 +198,20 @@ redoButton.innerHTML = "redo";
 undoRedoCont.append(redoButton);
 
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-ctx.lineWidth = thinLineWidth;
+ctx.lineWidth = 3;
 ctx.fillStyle = "black";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.font = "40px sans-serif";
 
 const drawingChanged = new Event("drawing-changed");
 const mouseOnCanvas = new Event("mouse-on-canvas");
 
 const cursor: CursorObj | null = new CursorObj(0, 0);
 
-const lines: Line[] = [];
-const redoLines: Line[] = [];
-let currentLine: Line | null = null;
+const lines: Drawing[] = [];
+const redoLines: Drawing[] = [];
+let currentLine: Drawing | null = null;
 
 // pointer is a unifying interaction event for mouse, pen, and touch
 // Pointer Entering / Leaving Canvas
@@ -165,7 +234,11 @@ canvas.addEventListener("pointerdown", (pd) => {
   cursor.x = pd.offsetX;
   cursor.y = pd.offsetY;
 
-  currentLine = new Line({ x: cursor.x, y: cursor.y }, ctx.lineWidth);
+  if (cursor.currTool == "sticker") {
+    currentLine = new Drawing({ x: cursor.x, y: cursor.y }, null, cursor.currSticker);
+  } else {
+    currentLine = new Drawing({ x: cursor.x, y: cursor.y }, ctx.lineWidth, null);
+  }
   lines.push(currentLine);
 
   canvas.dispatchEvent(drawingChanged);
@@ -199,31 +272,29 @@ canvas.addEventListener("mouse-on-canvas", () => {
 
 canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  cursor.display(ctx);
   for (const line of lines) {
     if (line != null) {
       line.display(ctx);
     }
   }
+  cursor.display(ctx);
 });
 
-thinMarker.addEventListener("click", () => {
-  for (const button of tool_bar) {
-    button.classList.remove("selectedTool");
-  }
-  thinMarker.classList.add("selectedTool");
-  ctx.lineWidth = thinLineWidth;
-  cursor.currTool = "thin";
-});
-
-thickMarker.addEventListener("click", () => {
-  for (const button of tool_bar) {
-    button.classList.remove("selectedTool");
-  }
-  thickMarker.classList.add("selectedTool");
-  ctx.lineWidth = thickLineWidth;
-  cursor.currTool = "thick";
-});
+for (const currbutton of toolButtons) {
+  currbutton.addEventListener("click", () => {
+    for (const button of toolButtons) {
+      button.classList.remove("selectedTool");
+    }
+    currbutton.classList.add("selectedTool");
+    if (currbutton.dataset.newLineWeight != "NA") {
+      ctx.lineWidth = Number(currbutton.dataset.newLineWeight);
+      cursor.currTool = ctx.lineWidth.toString();
+    } else {
+      cursor.currTool = "sticker";
+      cursor.currSticker = currbutton.textContent;
+    }
+  });
+}
 
 undoButton.addEventListener("click", () => {
   if (lines.length > 0) {
