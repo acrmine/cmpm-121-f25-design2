@@ -12,36 +12,46 @@ interface ToolButton {
 const propogateToolBar = (toolBar: HTMLDivElement, toolButtons: ToolButton[]): HTMLButtonElement[] => {
   const outputButtons: HTMLButtonElement[] = [];
   for (const buttonDetails of toolButtons) {
-    const newbutton = document.createElement("button") as HTMLButtonElement;
-    newbutton.classList.add("toolButton");
-    newbutton.title = buttonDetails.name;
-    newbutton.dataset.newLineWeight = "NA";
-    toolBar.append(newbutton);
-    outputButtons.push(newbutton);
-
-    if (buttonDetails.type == "marker") {
-      const markerIcon = document.createElement("div") as HTMLDivElement;
-      markerIcon.classList.add("mrkrCircle");
-      if (buttonDetails.lineWeight != undefined) {
-        markerIcon.style.width = (buttonDetails.lineWeight * 2).toString() + "px";
-        markerIcon.style.height = (buttonDetails.lineWeight * 2).toString() + "px";
-        newbutton.dataset.newLineWeight = buttonDetails.lineWeight.toString();
-      } else {
-        console.log('Line weight undefined for button "' + buttonDetails.name + '"');
-      }
-      newbutton.appendChild(markerIcon);
-    } else if (buttonDetails.type == "sticker") {
-      if (buttonDetails.sticker != undefined) {
-        newbutton.textContent = buttonDetails.sticker;
-      } else {
-        console.log('Sticker undefined for button "' + buttonDetails.name + '"');
-      }
-    } else {
-      console.log('No type defined for button "' + buttonDetails.name + '"');
-    }
+    outputButtons.push(addToolButton(toolBar, buttonDetails));
   }
   return outputButtons;
 };
+
+const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLButtonElement => {
+  const newbutton = document.createElement("button") as HTMLButtonElement;
+  newbutton.classList.add("toolButton");
+  newbutton.title = toolButton.name;
+  newbutton.dataset.newLineWeight = "NA";
+  toolBar.append(newbutton);
+
+  if (toolButton.type == "marker") {
+    const markerIcon = document.createElement("div") as HTMLDivElement;
+    markerIcon.classList.add("mrkrCircle");
+    if (toolButton.lineWeight != undefined) {
+      markerIcon.style.width = (toolButton.lineWeight * 2).toString() + "px";
+      markerIcon.style.height = (toolButton.lineWeight * 2).toString() + "px";
+      newbutton.dataset.newLineWeight = toolButton.lineWeight.toString();
+    } else {
+      console.log('Line weight undefined for button "' + toolButton.name + '"');
+    }
+    newbutton.appendChild(markerIcon);
+  } else if (toolButton.type == "sticker") {
+    if (toolButton.sticker != undefined) {
+      newbutton.textContent = toolButton.sticker;
+    } else {
+      console.log('Text undefined for button "' + toolButton.name + '"');
+    }
+  } else if (toolButton.type == "creator") { 
+    if (toolButton.sticker != undefined) {
+      newbutton.textContent = toolButton.sticker;
+    } else {
+      console.log('Sticker undefined for button "' + toolButton.name + '"');
+    }
+  } else {
+    console.log('No type defined for button "' + toolButton.name + '"');
+  }
+  return newbutton;
+}
 
 class Drawing {
   points: Point[] = [];
@@ -177,7 +187,12 @@ const toolBarButtons: ToolButton[] = [
   },
 ];
 propogateToolBar(toolBar, toolBarButtons);
-const toolButtons: NodeListOf<HTMLButtonElement> = toolBar.querySelectorAll(".toolButton");
+const nodeListToolBar: NodeListOf<HTMLButtonElement> = toolBar.querySelectorAll(".toolButton");
+const toolButtons = [...nodeListToolBar] as HTMLButtonElement[];
+
+const instantiateBtn = (toolBar: HTMLDivElement, toolButton: ToolButton) => {
+  toolButtons.push(addToolButton(toolBar, toolButton));
+};
 
 const clearButton = document.createElement("button");
 clearButton.id = "clrBtn";
