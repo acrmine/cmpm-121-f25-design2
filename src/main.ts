@@ -21,6 +21,7 @@ const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLBut
   const newbutton = document.createElement("button") as HTMLButtonElement;
   newbutton.classList.add("toolButton");
   newbutton.title = toolButton.name;
+  newbutton.dataset.mode = toolButton.type;
   newbutton.dataset.newLineWeight = "NA";
   toolBar.append(newbutton);
 
@@ -41,7 +42,7 @@ const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLBut
     } else {
       console.log('Text undefined for button "' + toolButton.name + '"');
     }
-  } else if (toolButton.type == "creator") { 
+  } else if (toolButton.type == "creator") {
     if (toolButton.sticker != undefined) {
       newbutton.textContent = toolButton.sticker;
     } else {
@@ -51,7 +52,7 @@ const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLBut
     console.log('No type defined for button "' + toolButton.name + '"');
   }
   return newbutton;
-}
+};
 
 class Drawing {
   points: Point[] = [];
@@ -185,14 +186,15 @@ const toolBarButtons: ToolButton[] = [
     type: "sticker",
     sticker: "🛰️",
   },
+  {
+    name: "New Sticker",
+    type: "creator",
+    sticker: "+",
+  },
 ];
 propogateToolBar(toolBar, toolBarButtons);
 const nodeListToolBar: NodeListOf<HTMLButtonElement> = toolBar.querySelectorAll(".toolButton");
 const toolButtons = [...nodeListToolBar] as HTMLButtonElement[];
-
-const instantiateBtn = (toolBar: HTMLDivElement, toolButton: ToolButton) => {
-  toolButtons.push(addToolButton(toolBar, toolButton));
-};
 
 const clearButton = document.createElement("button");
 clearButton.id = "clrBtn";
@@ -295,21 +297,57 @@ canvas.addEventListener("drawing-changed", () => {
   cursor.display(ctx);
 });
 
-for (const currbutton of toolButtons) {
-  currbutton.addEventListener("click", () => {
-    for (const button of toolButtons) {
-      button.classList.remove("selectedTool");
-    }
-    currbutton.classList.add("selectedTool");
-    if (currbutton.dataset.newLineWeight != "NA") {
-      ctx.lineWidth = Number(currbutton.dataset.newLineWeight);
-      cursor.currTool = ctx.lineWidth.toString();
-    } else {
-      cursor.currTool = "sticker";
-      cursor.currSticker = currbutton.textContent;
+const switchSelectedButton = (newSelectedBtn: HTMLButtonElement, buttons: HTMLButtonElement[]) => {
+  for (const button of buttons) {
+    button.classList.remove("selectedTool");
+  }
+  newSelectedBtn.classList.add("selectedTool");
+};
+
+const markerBtnHandler = (unhandledBtn: HTMLButtonElement) => {
+  unhandledBtn.addEventListener("click", () => {
+    switchSelectedButton(unhandledBtn, toolButtons);
+    ctx.lineWidth = Number(unhandledBtn.dataset.newLineWeight);
+    cursor.currTool = ctx.lineWidth.toString();
+  });
+};
+
+const stickerBtnHandler = (unhandledBtn: HTMLButtonElement) => {
+  unhandledBtn.addEventListener("click", () => {
+    switchSelectedButton(unhandledBtn, toolButtons);
+    cursor.currTool = "sticker";
+    cursor.currSticker = unhandledBtn.textContent;
+  });
+};
+
+const creatorBtnHandler = (unhandledBtn: HTMLButtonElement) => {
+  unhandledBtn.addEventListener("click", () => {
+    const newText = prompt("Input the text that will go in the sticker", "💀");
+    if (newText != null) {
+      const newButton = {
+        name: newText,
+        type: "sticker",
+        sticker: newText,
+      };
+      const createdButton: HTMLButtonElement = addToolButton(toolBar, newButton);
+      toolButtons.push(createdButton);
+      stickerBtnHandler(createdButton);
     }
   });
-}
+};
+
+const createBtnHandlers = (currToolButtons: HTMLButtonElement[]) => {
+  for (const currbutton of currToolButtons) {
+    if (currbutton.dataset.mode == "marker") {
+      markerBtnHandler(currbutton);
+    } else if (currbutton.dataset.mode == "creator") {
+      creatorBtnHandler(currbutton);
+    } else {
+      stickerBtnHandler(currbutton);
+    }
+  }
+};
+createBtnHandlers(toolButtons);
 
 undoButton.addEventListener("click", () => {
   if (lines.length > 0) {
