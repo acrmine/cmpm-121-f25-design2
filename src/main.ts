@@ -201,6 +201,11 @@ clearButton.id = "clrBtn";
 clearButton.innerHTML = "clear";
 canvasCont.appendChild(clearButton);
 
+const exportButton = document.createElement("button");
+exportButton.id = "exportBtn";
+exportButton.innerHTML = "export";
+canvasCont.appendChild(exportButton);
+
 const undoRedoCont = document.createElement("div") as HTMLDivElement;
 document.body.append(undoRedoCont);
 
@@ -373,4 +378,8 @@ clearButton.addEventListener("click", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   lines.splice(0, lines.length);
   redoLines.splice(0, redoLines.length);
+});
+
+exportButton.addEventListener("click", () => {
+  console.log("export button clicked");
 });
