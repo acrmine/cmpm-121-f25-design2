@@ -231,9 +231,9 @@ const mouseOnCanvas = new Event("mouse-on-canvas");
 
 const cursor: CursorObj | null = new CursorObj(0, 0);
 
-const lines: Drawing[] = [];
-const redoLines: Drawing[] = [];
-let currentLine: Drawing | null = null;
+const drawings: Drawing[] = [];
+const redoDrawings: Drawing[] = [];
+let currentDrawing: Drawing | null = null;
 
 // pointer is a unifying interaction event for mouse, pen, and touch
 // Pointer Entering / Leaving Canvas
@@ -257,11 +257,11 @@ canvas.addEventListener("pointerdown", (pd) => {
   cursor.y = pd.offsetY;
 
   if (cursor.currTool == "sticker") {
-    currentLine = new Drawing({ x: cursor.x, y: cursor.y }, null, cursor.currSticker);
+    currentDrawing = new Drawing({ x: cursor.x, y: cursor.y }, null, cursor.currSticker);
   } else {
-    currentLine = new Drawing({ x: cursor.x, y: cursor.y }, ctx.lineWidth, null);
+    currentDrawing = new Drawing({ x: cursor.x, y: cursor.y }, ctx.lineWidth, null);
   }
-  lines.push(currentLine);
+  drawings.push(currentDrawing);
 
   canvas.dispatchEvent(drawingChanged);
 });
@@ -269,7 +269,7 @@ canvas.addEventListener("pointerdown", (pd) => {
 canvas.addEventListener("pointerup", () => {
   cursor.active = false;
   cursor.cursorUp = true;
-  currentLine = null;
+  currentDrawing = null;
 
   canvas.dispatchEvent(drawingChanged);
 });
@@ -278,8 +278,8 @@ canvas.addEventListener("pointermove", (pm) => {
   cursor.x = pm.offsetX;
   cursor.y = pm.offsetY;
   if (cursor.active) {
-    if (currentLine != null) {
-      currentLine.drag({ x: cursor.x, y: cursor.y });
+    if (currentDrawing != null) {
+      currentDrawing.drag({ x: cursor.x, y: cursor.y });
     }
     canvas.dispatchEvent(drawingChanged);
   }
@@ -292,13 +292,24 @@ canvas.addEventListener("mouse-on-canvas", () => {
   canvas.dispatchEvent(drawingChanged);
 });
 
-canvas.addEventListener("drawing-changed", () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const line of lines) {
-    if (line != null) {
-      line.display(ctx);
+const displayOnCanvas = (canvasWidth: number, canvasHeight: number, canvasContext: CanvasRenderingContext2D, drawingsArray: Drawing[]) => {
+  canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+  for (const drawing of drawingsArray) {
+    if (drawing != null) {
+      drawing.display(canvasContext);
     }
   }
+};
+
+const downloadCanvas = (chosenCanvas: HTMLCanvasElement) => {
+  const anchor = document.createElement("a");
+  anchor.href = chosenCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
+};
+
+canvas.addEventListener("drawing-changed", () => {
+  displayOnCanvas(canvas.width, canvas.height, ctx, drawings);
   cursor.display(ctx);
 });
 
@@ -355,20 +366,20 @@ const createBtnHandlers = (currToolButtons: HTMLButtonElement[]) => {
 createBtnHandlers(toolButtons);
 
 undoButton.addEventListener("click", () => {
-  if (lines.length > 0) {
-    const prevLine = lines.pop();
+  if (drawings.length > 0) {
+    const prevLine = drawings.pop();
     if (prevLine !== undefined) {
-      redoLines.push(prevLine);
+      redoDrawings.push(prevLine);
     }
     canvas.dispatchEvent(drawingChanged);
   }
 });
 
 redoButton.addEventListener("click", () => {
-  if (redoLines.length > 0) {
-    const pastLine = redoLines.pop();
+  if (redoDrawings.length > 0) {
+    const pastLine = redoDrawings.pop();
     if (pastLine !== undefined) {
-      lines.push(pastLine);
+      drawings.push(pastLine);
     }
     canvas.dispatchEvent(drawingChanged);
   }
@@ -376,10 +387,17 @@ redoButton.addEventListener("click", () => {
 
 clearButton.addEventListener("click", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  lines.splice(0, lines.length);
-  redoLines.splice(0, redoLines.length);
+  drawings.splice(0, drawings.length);
+  redoDrawings.splice(0, redoDrawings.length);
 });
 
 exportButton.addEventListener("click", () => {
-  console.log("export button clicked");
+  const downloadableCanvas = document.createElement("canvas") as HTMLCanvasElement;
+  downloadableCanvas.id = "downloadable";
+  downloadableCanvas.width = 1024;
+  downloadableCanvas.height = 1024;
+  const downloadableCtx = downloadableCanvas.getContext("2d") as CanvasRenderingContext2D;
+  downloadableCtx.scale(4, 4);
+  displayOnCanvas(downloadableCanvas.width, downloadableCanvas.height, downloadableCtx, drawings);
+  downloadCanvas(downloadableCanvas);
 });
