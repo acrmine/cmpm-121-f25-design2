@@ -53,12 +53,20 @@ body {
 }
 #undoBtn {
   background-color: rgb(136, 135, 220);
-  width: 120px;
+  height: 23px;
+  width: 100px;
+  text-align: center;
   margin: 4px;
+}
+#colorPckr {
+  height: 23px;
+  width: 48px;
 }
 #redoBtn {
   background-color: rgb(136, 135, 220);
-  width: 120px;
+  height: 23px;
+  width: 100px;
+  text-align: center;
   margin: 4px;
 }
 #clrBtn {

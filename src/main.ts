@@ -32,19 +32,22 @@ class Drawing {
   stickerPoint: Point | null;
   lineWidth: number | null;
   sticker: string | null;
+  color: string | null;
 
-  constructor(startPoint: Point, lineWidth: number | null = null, sticker: string | null = null) {
+  constructor(startPoint: Point, lineWidth: number | null, sticker: string | null, color: string | null) {
     this.stickerPoint = null;
     this.lineWidth = lineWidth;
     this.sticker = sticker;
+    this.color = color;
     this.canvasStorage = document.createElement("canvas") as HTMLCanvasElement;
     this.canvasStorage.width = CANVAS_WIDTH;
     this.canvasStorage.height = CANVAS_HEIGHT;
     this.storageContext = this.canvasStorage.getContext("2d") as CanvasRenderingContext2D;
     setDefContext(this.storageContext);
 
-    if (this.lineWidth !== null && this.sticker === null) {
+    if (this.lineWidth !== null && this.sticker === null && this.color !== null) {
       this.storageContext.lineWidth = this.lineWidth;
+      this.storageContext.strokeStyle = this.color;
       this.storageContext.beginPath();
       this.storageContext.moveTo(startPoint.x, startPoint.y);
     } else if (this.lineWidth === null && this.sticker !== null) {
@@ -130,7 +133,7 @@ const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLBut
   newbutton.dataset.newLineWeight = "NA";
   toolBar.append(newbutton);
 
-  if (toolButton.type == "marker") {
+  if (toolButton.type === "marker") {
     const markerIcon = document.createElement("div") as HTMLDivElement;
     markerIcon.classList.add("mrkrCircle");
     if (toolButton.lineWeight != undefined) {
@@ -141,13 +144,13 @@ const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLBut
       console.log('Line weight undefined for button "' + toolButton.name + '"');
     }
     newbutton.appendChild(markerIcon);
-  } else if (toolButton.type == "sticker") {
+  } else if (toolButton.type === "sticker") {
     if (toolButton.sticker != undefined) {
       newbutton.textContent = toolButton.sticker;
     } else {
       console.log('Text undefined for button "' + toolButton.name + '"');
     }
-  } else if (toolButton.type == "creator") {
+  } else if (toolButton.type === "creator") {
     if (toolButton.sticker != undefined) {
       newbutton.textContent = toolButton.sticker;
     } else {
@@ -224,6 +227,12 @@ undoButton.id = "undoBtn";
 undoButton.innerHTML = "⏪ undo";
 undoRedoCont.append(undoButton);
 
+const colorPicker = document.createElement("input");
+colorPicker.id = "colorPckr";
+colorPicker.type = "color";
+colorPicker.value = "black";
+undoRedoCont.append(colorPicker);
+
 const redoButton = document.createElement("button");
 redoButton.id = "redoBtn";
 redoButton.innerHTML = "redo ⏩";
@@ -267,9 +276,9 @@ canvas.addEventListener("pointerdown", (pd) => {
   cursor.y = pd.offsetY;
 
   if (cursor.currTool == "sticker") {
-    currentDrawing = new Drawing({ x: cursor.x, y: cursor.y }, null, cursor.currSticker);
+    currentDrawing = new Drawing({ x: cursor.x, y: cursor.y }, null, cursor.currSticker, null);
   } else {
-    currentDrawing = new Drawing({ x: cursor.x, y: cursor.y }, ctx.lineWidth, null);
+    currentDrawing = new Drawing({ x: cursor.x, y: cursor.y }, ctx.lineWidth, null, colorPicker.value);
   }
   drawings.push(currentDrawing);
 
@@ -338,6 +347,11 @@ const markerBtnHandler = (unhandledBtn: HTMLButtonElement) => {
   });
 };
 
+const changeMrkrIconColor = (newColor: string, mrkrBtn: HTMLButtonElement) => {
+  const mrkrIcon = mrkrBtn.childNodes[0] as HTMLDivElement;
+  mrkrIcon.style.backgroundColor = newColor;
+};
+
 const stickerBtnHandler = (unhandledBtn: HTMLButtonElement) => {
   unhandledBtn.addEventListener("click", () => {
     switchSelectedButton(unhandledBtn, toolButtons);
@@ -383,6 +397,16 @@ undoButton.addEventListener("click", () => {
     }
     canvas.dispatchEvent(drawingChanged);
   }
+});
+
+colorPicker.addEventListener("input", () => {
+  for (const currButton of toolButtons) {
+    if (currButton.dataset.mode === "marker") {
+      changeMrkrIconColor(colorPicker.value, currButton);
+    }
+  }
+  ctx.fillStyle = colorPicker.value;
+  ctx.strokeStyle = colorPicker.value;
 });
 
 redoButton.addEventListener("click", () => {
