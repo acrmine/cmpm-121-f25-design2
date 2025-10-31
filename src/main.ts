@@ -5,6 +5,7 @@ type Point = { x: number; y: number };
 const CANVAS_WIDTH = 256;
 const CANVAS_HEIGHT = 256;
 const CANVAS_TEXT = {
+  startLineWidth: 3,
   fillStyle: "black",
   textAlign: "center",
   textBaseline: "middle",
@@ -28,10 +29,12 @@ interface ToolButton {
 class Drawing {
   canvasStorage: HTMLCanvasElement;
   storageContext: CanvasRenderingContext2D;
+  stickerPoint: Point | null;
   lineWidth: number | null;
   sticker: string | null;
 
   constructor(startPoint: Point, lineWidth: number | null = null, sticker: string | null = null) {
+    this.stickerPoint = null;
     this.lineWidth = lineWidth;
     this.sticker = sticker;
     this.canvasStorage = document.createElement("canvas") as HTMLCanvasElement;
@@ -39,43 +42,36 @@ class Drawing {
     this.canvasStorage.height = CANVAS_HEIGHT;
     this.storageContext = this.canvasStorage.getContext("2d") as CanvasRenderingContext2D;
     setDefContext(this.storageContext);
-    this.storageContext.beginPath();
-    if (lineWidth != null && sticker == null) {
+
+    if (this.lineWidth !== null && this.sticker === null) {
+      this.storageContext.lineWidth = this.lineWidth;
+      this.storageContext.beginPath();
       this.storageContext.moveTo(startPoint.x, startPoint.y);
+    } else if (this.lineWidth === null && this.sticker !== null) {
+      this.stickerPoint = startPoint;
+      this.storageContext.fillText(this.sticker, this.stickerPoint.x, this.stickerPoint.y);
+    } else {
+      console.log("Initialized drawing with either no linewidth and no sticker or with both.");
     }
   }
 
   drag(nextPoint: Point) {
+    this.stickerPoint = nextPoint;
     if (this.lineWidth !== null) {
-      this.points.push(nextPoint);
-    } else {
-      this.points[0] = nextPoint;
+      this.storageContext.lineTo(this.stickerPoint.x, this.stickerPoint.y);
+      this.storageContext.stroke();
+    } else if (this.sticker !== null) {
+      this.storageContext.clearRect(0, 0, this.canvasStorage.width, this.canvasStorage.height);
+      this.storageContext.fillText(this.sticker, this.stickerPoint.x, this.stickerPoint.y);
     }
   }
 
   clear() {
-    this.points.splice(0, this.points.length);
+    this.storageContext.clearRect(0, 0, this.canvasStorage.width, this.canvasStorage.height);
   }
 
   display(ctxElem: CanvasRenderingContext2D) {
-    if (this.lineWidth !== null) {
-      const prevLineWidth: number = ctx.lineWidth;
-      ctx.lineWidth = this.lineWidth;
-      if (this.points.length > 1) {
-        ctxElem.beginPath();
-        const { x, y } = this.points[0];
-        ctxElem.moveTo(x, y);
-        for (const { x, y } of this.points) {
-          ctxElem.lineTo(x, y);
-        }
-        ctxElem.stroke();
-      }
-      ctx.lineWidth = prevLineWidth;
-    } else if (this.sticker !== null) {
-      ctxElem.beginPath();
-      ctxElem.fillText(this.sticker, this.points[0].x, this.points[0].y);
-      ctxElem.stroke();
-    }
+    ctxElem.drawImage(this.canvasStorage, 0, 0);
   }
 }
 
