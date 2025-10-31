@@ -17,43 +17,6 @@ const propogateToolBar = (toolBar: HTMLDivElement, toolButtons: ToolButton[]): H
   return outputButtons;
 };
 
-const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLButtonElement => {
-  const newbutton = document.createElement("button") as HTMLButtonElement;
-  newbutton.classList.add("toolButton");
-  newbutton.title = toolButton.name;
-  newbutton.dataset.mode = toolButton.type;
-  newbutton.dataset.newLineWeight = "NA";
-  toolBar.append(newbutton);
-
-  if (toolButton.type == "marker") {
-    const markerIcon = document.createElement("div") as HTMLDivElement;
-    markerIcon.classList.add("mrkrCircle");
-    if (toolButton.lineWeight != undefined) {
-      markerIcon.style.width = (toolButton.lineWeight * 2).toString() + "px";
-      markerIcon.style.height = (toolButton.lineWeight * 2).toString() + "px";
-      newbutton.dataset.newLineWeight = toolButton.lineWeight.toString();
-    } else {
-      console.log('Line weight undefined for button "' + toolButton.name + '"');
-    }
-    newbutton.appendChild(markerIcon);
-  } else if (toolButton.type == "sticker") {
-    if (toolButton.sticker != undefined) {
-      newbutton.textContent = toolButton.sticker;
-    } else {
-      console.log('Text undefined for button "' + toolButton.name + '"');
-    }
-  } else if (toolButton.type == "creator") {
-    if (toolButton.sticker != undefined) {
-      newbutton.textContent = toolButton.sticker;
-    } else {
-      console.log('Sticker undefined for button "' + toolButton.name + '"');
-    }
-  } else {
-    console.log('No type defined for button "' + toolButton.name + '"');
-  }
-  return newbutton;
-};
-
 class Drawing {
   points: Point[] = [];
   lineWidth: number | null;
@@ -105,7 +68,7 @@ class Drawing {
     } else if (this.sticker !== null) {
       ctxElem.beginPath();
       ctxElem.fillText(this.sticker, this.points[0].x, this.points[0].y);
-      ctxElem.stroke();
+      //ctxElem.stroke();
     }
   }
 }
@@ -156,6 +119,43 @@ canvas.id = "sketchpad";
 canvas.width = 256;
 canvas.height = 256;
 canvasCont.append(canvas);
+
+const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLButtonElement => {
+  const newbutton = document.createElement("button") as HTMLButtonElement;
+  newbutton.classList.add("toolButton");
+  newbutton.title = toolButton.name;
+  newbutton.dataset.mode = toolButton.type;
+  newbutton.dataset.newLineWeight = "NA";
+  toolBar.append(newbutton);
+
+  if (toolButton.type == "marker") {
+    const markerIcon = document.createElement("div") as HTMLDivElement;
+    markerIcon.classList.add("mrkrCircle");
+    if (toolButton.lineWeight != undefined) {
+      markerIcon.style.width = (toolButton.lineWeight * 2).toString() + "px";
+      markerIcon.style.height = (toolButton.lineWeight * 2).toString() + "px";
+      newbutton.dataset.newLineWeight = toolButton.lineWeight.toString();
+    } else {
+      console.log('Line weight undefined for button "' + toolButton.name + '"');
+    }
+    newbutton.appendChild(markerIcon);
+  } else if (toolButton.type == "sticker") {
+    if (toolButton.sticker != undefined) {
+      newbutton.textContent = toolButton.sticker;
+    } else {
+      console.log('Text undefined for button "' + toolButton.name + '"');
+    }
+  } else if (toolButton.type == "creator") {
+    if (toolButton.sticker != undefined) {
+      newbutton.textContent = toolButton.sticker;
+    } else {
+      console.log('Sticker undefined for button "' + toolButton.name + '"');
+    }
+  } else {
+    console.log('No type defined for button "' + toolButton.name + '"');
+  }
+  return newbutton;
+};
 
 const toolBar = document.createElement("div") as HTMLDivElement;
 toolBar.id = "toolBar";
