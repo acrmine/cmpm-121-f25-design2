@@ -2,6 +2,22 @@ import "./style.css";
 
 type Point = { x: number; y: number };
 
+const CANVAS_WIDTH = 256;
+const CANVAS_HEIGHT = 256;
+const CANVAS_TEXT = {
+  fillStyle: "black",
+  textAlign: "center",
+  textBaseline: "middle",
+  font: "40px sans-serif",
+};
+
+const setDefContext = (canvasContext: CanvasRenderingContext2D): void => {
+  canvasContext.fillStyle = CANVAS_TEXT.fillStyle;
+  canvasContext.textAlign = CANVAS_TEXT.textAlign as CanvasTextAlign;
+  canvasContext.textBaseline = CANVAS_TEXT.textBaseline as CanvasTextBaseline;
+  canvasContext.font = CANVAS_TEXT.font;
+};
+
 interface ToolButton {
   name: string;
   type: string;
@@ -9,24 +25,24 @@ interface ToolButton {
   lineWeight?: number;
 }
 
-const propogateToolBar = (toolBar: HTMLDivElement, toolButtons: ToolButton[]): HTMLButtonElement[] => {
-  const outputButtons: HTMLButtonElement[] = [];
-  for (const buttonDetails of toolButtons) {
-    outputButtons.push(addToolButton(toolBar, buttonDetails));
-  }
-  return outputButtons;
-};
-
 class Drawing {
-  points: Point[] = [];
+  canvasStorage: HTMLCanvasElement;
+  storageContext: CanvasRenderingContext2D;
   lineWidth: number | null;
   sticker: string | null;
 
   constructor(startPoint: Point, lineWidth: number | null = null, sticker: string | null = null) {
     this.lineWidth = lineWidth;
     this.sticker = sticker;
-    this.points = [];
-    this.points.push(startPoint);
+    this.canvasStorage = document.createElement("canvas") as HTMLCanvasElement;
+    this.canvasStorage.width = CANVAS_WIDTH;
+    this.canvasStorage.height = CANVAS_HEIGHT;
+    this.storageContext = this.canvasStorage.getContext("2d") as CanvasRenderingContext2D;
+    setDefContext(this.storageContext);
+    this.storageContext.beginPath();
+    if (lineWidth != null && sticker == null) {
+      this.storageContext.moveTo(startPoint.x, startPoint.y);
+    }
   }
 
   drag(nextPoint: Point) {
@@ -39,16 +55,6 @@ class Drawing {
 
   clear() {
     this.points.splice(0, this.points.length);
-  }
-
-  // works like [] but checks bounds
-  getPoint(index: number): Point {
-    let outPoint: Point = { x: -1, y: -1 };
-    if (index >= this.points.length || index < 0) {
-      return outPoint;
-    }
-    outPoint = this.points[index];
-    return outPoint;
   }
 
   display(ctxElem: CanvasRenderingContext2D) {
@@ -68,7 +74,7 @@ class Drawing {
     } else if (this.sticker !== null) {
       ctxElem.beginPath();
       ctxElem.fillText(this.sticker, this.points[0].x, this.points[0].y);
-      //ctxElem.stroke();
+      ctxElem.stroke();
     }
   }
 }
@@ -116,8 +122,8 @@ document.body.append(canvasCont);
 
 const canvas = document.createElement("canvas") as HTMLCanvasElement;
 canvas.id = "sketchpad";
-canvas.width = 256;
-canvas.height = 256;
+canvas.width = CANVAS_WIDTH;
+canvas.height = CANVAS_HEIGHT;
 canvasCont.append(canvas);
 
 const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLButtonElement => {
@@ -155,6 +161,14 @@ const addToolButton = (toolBar: HTMLDivElement, toolButton: ToolButton): HTMLBut
     console.log('No type defined for button "' + toolButton.name + '"');
   }
   return newbutton;
+};
+
+const propogateToolBar = (toolBar: HTMLDivElement, toolButtons: ToolButton[]): HTMLButtonElement[] => {
+  const outputButtons: HTMLButtonElement[] = [];
+  for (const buttonDetails of toolButtons) {
+    outputButtons.push(addToolButton(toolBar, buttonDetails));
+  }
+  return outputButtons;
 };
 
 const toolBar = document.createElement("div") as HTMLDivElement;
@@ -394,8 +408,8 @@ clearButton.addEventListener("click", () => {
 exportButton.addEventListener("click", () => {
   const downloadableCanvas = document.createElement("canvas") as HTMLCanvasElement;
   downloadableCanvas.id = "downloadable";
-  downloadableCanvas.width = 1024;
-  downloadableCanvas.height = 1024;
+  downloadableCanvas.width = CANVAS_WIDTH * 4;
+  downloadableCanvas.height = CANVAS_HEIGHT * 4;
   const downloadableCtx = downloadableCanvas.getContext("2d") as CanvasRenderingContext2D;
   downloadableCtx.scale(4, 4);
   displayOnCanvas(downloadableCanvas.width, downloadableCanvas.height, downloadableCtx, drawings);
