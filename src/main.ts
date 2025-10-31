@@ -213,7 +213,7 @@ canvasCont.appendChild(clearButton);
 
 const exportButton = document.createElement("button");
 exportButton.id = "exportBtn";
-exportButton.innerHTML = "export";
+exportButton.innerHTML = "->]";
 canvasCont.appendChild(exportButton);
 
 const undoRedoCont = document.createElement("div") as HTMLDivElement;
@@ -221,12 +221,12 @@ document.body.append(undoRedoCont);
 
 const undoButton = document.createElement("button");
 undoButton.id = "undoBtn";
-undoButton.innerHTML = "undo";
+undoButton.innerHTML = "⏪ undo";
 undoRedoCont.append(undoButton);
 
 const redoButton = document.createElement("button");
 redoButton.id = "redoBtn";
-redoButton.innerHTML = "redo";
+redoButton.innerHTML = "redo ⏩";
 undoRedoCont.append(redoButton);
 
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
